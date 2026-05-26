@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>行程岛 · 小红书旅行助手</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #FAF7F2; --sand: #EDE8DF; --bark: #C4A882; --terra: #C17B4A;
+    --moss: #5A7A5C; --ink: #1E1A14; --muted: #7A7268;
+    --note-bg: #FFFDF8; --card-border: rgba(196,168,130,0.35); --radius: 16px; --radius-sm: 10px;
+  }
+  body { font-family: 'Outfit', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; overflow-x: hidden; }
+
+  /* ── header ── */
+  header { padding: 22px 40px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--card-border); }
+  .logo-mark { width: 36px; height: 36px; background: var(--ink); border-radius: 9px; display: flex; align-items: center; justify-content: center; color: var(--cream); font-size: 17px; }
+  .logo-text { font-family: 'Noto Serif SC', serif; font-size: 19px; font-weight: 600; }
+  .logo-sub { font-size: 12px; color: var(--muted); margin-left: auto; letter-spacing: .04em; }
+
+  /* ── tabs ── */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--card-border); padding: 0 40px; background: var(--cream); }
+  .tab { padding: 14px 20px; font-size: 14px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .2s; user-select: none; }
+  .tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+  .tab:hover:not(.active) { color: var(--ink); }
+
+  /* ── panels ── */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ══════════════════════════════
+     INSTALL PANEL
+  ══════════════════════════════ */
+  .install-panel { max-width: 720px; margin: 0 auto; padding: 48px 40px; }
+  .install-hero { text-align: center; margin-bottom: 48px; }
+  .install-hero h1 { font-family: 'Noto Serif SC', serif; font-size: 28px; font-weight: 600; margin-bottom: 10px; }
+  .install-hero p { font-size: 15px; color: var(--muted); line-height: 1.7; }
+
+  .install-steps { display: flex; flex-direction: column; gap: 24px; margin-bottom: 40px; }
+  .install-step { display: flex; gap: 20px; align-items: flex-start; }
+  .step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--ink); color: var(--cream); font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+  .step-body { flex: 1; }
+  .step-title { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+  .step-desc { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+  /* bookmarklet drag button */
+  .bookmarklet-wrap { margin-top: 12px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .bookmarklet-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--ink); color: var(--cream);
+    padding: 11px 20px; border-radius: var(--radius-sm);
+    font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 500;
+    cursor: grab; text-decoration: none; user-select: none;
+    border: 2px dashed transparent;
+    transition: all .2s;
+  }
+  .bookmarklet-btn:hover { background: #2e2920; }
+  .bookmarklet-btn:active { cursor: grabbing; }
+  .drag-hint { font-size: 12px; color: var(--bark); display: flex; align-items: center; gap: 5px; }
+
+  .tip-box { background: var(--note-bg); border: 1px solid var(--card-border); border-radius: var(--radius-sm); padding: 14px 18px; font-size: 13px; color: var(--muted); line-height: 1.7; }
+  .tip-box strong { color: var(--ink); font-weight: 500; }
+
+  /* ══════════════════════════════
+     PLANNER PANEL  (original layout)
+  ══════════════════════════════ */
+  .planner-wrap { display: grid; grid-template-columns: 380px 1fr; min-height: calc(100vh - 113px); }
+  .left-panel { border-right: 1px solid var(--card-border); padding: 28px 28px; display: flex; flex-direction: column; gap: 18px; overflow-y: auto; }
+  .panel-label { font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
+
+  .trip-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .meta-field { display: flex; flex-direction: column; gap: 5px; }
+  .meta-field label { font-size: 11px; color: var(--muted); font-weight: 500; letter-spacing: .06em; }
+  .meta-field input, .meta-field select {
+    background: var(--note-bg); border: 1px solid var(--card-border); border-radius: var(--radius-sm);
+    padding: 9px 12px; font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--ink); outline: none; transition: border-color .2s;
+  }
+  .meta-field input:focus, .meta-field select:focus { border-color: var(--bark); }
+
+  /* collected notes list */
+  .notes-header { display: flex; align-items: center; justify-content: space-between; }
+  .note-count { font-size: 12px; color: var(--bark); font-family: 'DM Mono', monospace; }
+  .notes-list { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; padding-right: 2px; }
+  .notes-list::-webkit-scrollbar { width: 3px; }
+  .notes-list::-webkit-scrollbar-thumb { background: var(--bark); border-radius: 2px; }
+
+  .note-card { background: var(--note-bg); border: 1px solid var(--card-border); border-radius: var(--radius-sm); padding: 11px 13px; display: flex; gap: 10px; align-items: flex-start; animation: fadeUp .3s ease both; }
+  .note-card-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .note-card-body { flex: 1; min-width: 0; }
+  .note-card-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+  .note-card-preview { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .note-card-del { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 16px; padding: 0 2px; transition: color .15s; flex-shrink: 0; }
+  .note-card-del:hover { color: #c0392b; }
+
+  .empty-notes { text-align: center; padding: 24px 16px; border: 1.5px dashed var(--card-border); border-radius: var(--radius-sm); }
+  .empty-notes-icon { font-size: 28px; margin-bottom: 8px; }
+  .empty-notes-text { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .empty-notes-link { color: var(--terra); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+
+  .generate-btn {
+    background: var(--ink); color: var(--cream); border: none; border-radius: var(--radius-sm);
+    padding: 13px 24px; font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 500;
+    cursor: pointer; transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: auto;
+  }
+  .generate-btn:hover { background: #2e2920; transform: translateY(-1px); }
+  .generate-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+  .generate-btn .spinner { width: 15px; height: 15px; border: 2px solid rgba(250,247,242,.3); border-top-color: var(--cream); border-radius: 50%; animation: spin .7s linear infinite; display: none; }
+  .generate-btn.loading .spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* right panel / results */
+  .right-panel { padding: 32px 36px; overflow-y: auto; display: flex; flex-direction: column; }
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 12px; min-height: 400px; opacity: .5; }
+  .empty-icon { font-size: 44px; }
+  .empty-text { font-family: 'Noto Serif SC', serif; font-size: 18px; color: var(--muted); }
+  .empty-sub { font-size: 13px; color: var(--muted); text-align: center; line-height: 1.7; }
+
+  /* result */
+  .result-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid var(--card-border); }
+  .result-title { font-family: 'Noto Serif SC', serif; font-size: 24px; font-weight: 600; }
+  .result-meta { font-size: 12px; color: var(--muted); text-align: right; line-height: 1.8; }
+
+  .inspo-section { margin-bottom: 24px; }
+  .section-label { font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 10px; }
+  .inspo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px,1fr)); gap: 9px; }
+  .inspo-card { background: var(--note-bg); border: 1px solid var(--card-border); border-radius: var(--radius-sm); padding: 12px 14px; position: relative; overflow: hidden; animation: fadeUp .4s ease both; }
+  .inspo-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .inspo-card.type-food::before { background: #E8925A; }
+  .inspo-card.type-view::before { background: #5A8A7A; }
+  .inspo-card.type-stay::before { background: #7A7ABE; }
+  .inspo-card.type-tip::before  { background: #C4A832; }
+  .inspo-tag { font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 4px; margin-bottom: 6px; display: inline-block; }
+  .type-food .inspo-tag { background: rgba(232,146,90,.12); color: #A05020; }
+  .type-view .inspo-tag { background: rgba(90,138,122,.12); color: #2A6A5A; }
+  .type-stay .inspo-tag { background: rgba(122,122,190,.12); color: #4A4A9E; }
+  .type-tip  .inspo-tag { background: rgba(196,168,50,.12);  color: #806800; }
+  .inspo-name { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
+  .inspo-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+  .day-block { margin-bottom: 18px; animation: fadeUp .4s ease both; }
+  .day-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .day-badge { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--cream); padding: 3px 9px; border-radius: 5px; }
+  .day-badge[data-day="1"] { background: #C17B4A; }
+  .day-badge[data-day="2"] { background: #5A7A5C; }
+  .day-badge[data-day="3"] { background: #7A7ABE; }
+  .day-badge[data-day="4"] { background: #C4A832; }
+  .day-badge[data-day="5"] { background: #D85A30; }
+  .day-badge[data-day="6"] { background: #378ADD; }
+  .day-badge[data-day="7"] { background: #9B59B6; }
+  .day-theme { font-family: 'Noto Serif SC', serif; font-size: 14px; }
+  .day-stops { display: flex; flex-direction: column; gap: 7px; }
+  .stop-item { display: flex; gap: 12px; align-items: flex-start; padding: 11px 13px; background: var(--note-bg); border: 1px solid var(--card-border); border-radius: var(--radius-sm); }
+  .stop-time { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--bark); min-width: 40px; padding-top: 2px; }
+  .stop-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--bark); margin-top: 4px; flex-shrink: 0; }
+  .stop-content { flex: 1; }
+  .stop-name { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .stop-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .stop-tags { display: flex; gap: 4px; margin-top: 5px; flex-wrap: wrap; }
+  .stop-tag { font-size: 10px; padding: 2px 7px; background: var(--sand); color: var(--muted); border-radius: 4px; }
+  /* ── 文件夹 ── */
+  .folder-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .folder-tab {
+    padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+    cursor: pointer; border: 1px solid var(--card-border); background: var(--note-bg);
+    color: var(--muted); transition: all .2s; white-space: nowrap;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .folder-tab.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+  .folder-tab:hover:not(.active) { border-color: var(--bark); color: var(--terra); }
+  .folder-tab .folder-count { font-size: 10px; opacity: .7; }
+  .folder-add-btn {
+    padding: 5px 10px; border-radius: 20px; font-size: 12px;
+    cursor: pointer; border: 1.5px dashed var(--card-border);
+    background: none; color: var(--muted); font-family: 'Outfit', sans-serif;
+    transition: all .2s;
+  }
+  .folder-add-btn:hover { border-color: var(--bark); color: var(--terra); }
+
+  /* 采集弹窗 */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.4);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999; opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--cream); border-radius: var(--radius);
+    padding: 24px; width: 320px; box-shadow: 0 8px 32px rgba(0,0,0,.15);
+    transform: translateY(8px); transition: transform .2s;
+  }
+  .modal-overlay.show .modal { transform: translateY(0); }
+  .modal-title { font-family: 'Noto Serif SC', serif; font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .modal-subtitle { font-size: 12px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+  .modal-note-preview { background: var(--sand); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 12px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+  .modal-folders { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; max-height: 200px; overflow-y: auto; }
+  .modal-folder-btn {
+    padding: 10px 14px; border-radius: var(--radius-sm);
+    border: 1px solid var(--card-border); background: var(--note-bg);
+    font-family: 'Outfit', sans-serif; font-size: 13px; color: var(--ink);
+    cursor: pointer; text-align: left; transition: all .2s;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-folder-btn:hover { border-color: var(--bark); background: rgba(196,168,130,.08); }
+  .modal-folder-count { font-size: 11px; color: var(--muted); }
+  .modal-new-input {
+    width: 100%; padding: 9px 12px; border-radius: var(--radius-sm);
+    border: 1px solid var(--card-border); background: var(--note-bg);
+    font-family: 'Outfit', sans-serif; font-size: 13px; color: var(--ink);
+    outline: none; margin-bottom: 8px;
+  }
+  .modal-new-input:focus { border-color: var(--bark); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .modal-btn {
+    padding: 8px 16px; border-radius: var(--radius-sm);
+    font-family: 'Outfit', sans-serif; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--card-border); background: none; color: var(--muted);
+    transition: all .2s;
+  }
+  .modal-btn.primary { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+  .modal-btn:hover:not(.primary) { border-color: var(--bark); }
+
+  /* ── 编辑模式 ── */
+  .edit-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .edit-btn {
+    background: none; border: 1px solid var(--card-border); border-radius: var(--radius-sm);
+    padding: 7px 14px; font-family: 'Outfit', sans-serif; font-size: 13px; color: var(--muted);
+    cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 5px;
+  }
+  .edit-btn:hover { border-color: var(--bark); color: var(--terra); }
+  .edit-btn.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+  .edit-hint { font-size: 12px; color: var(--bark); }
+
+  /* 编辑模式下的停留点 */
+  .stop-item.editable { cursor: default; }
+  .stop-item.drag-over { border: 1.5px dashed var(--bark) !important; background: rgba(196,168,130,.08); }
+  .stop-item.dragging { opacity: .4; }
+  .drag-handle {
+    cursor: grab; color: var(--muted); font-size: 16px; padding: 0 4px;
+    flex-shrink: 0; align-self: center; display: none; user-select: none;
+  }
+  .editable .drag-handle { display: block; }
+  .stop-item.editable .stop-thumb-wrap { flex: 0 0 50%; }
+
+  /* 可编辑文字 */
+  .editable-field {
+    outline: none; border-radius: 4px; padding: 1px 4px; margin: -1px -4px;
+    transition: background .15s;
+  }
+  .edit-mode .editable-field:hover { background: rgba(196,168,130,.12); }
+  .edit-mode .editable-field:focus { background: rgba(196,168,130,.2); box-shadow: 0 0 0 2px rgba(196,168,130,.3); }
+
+  /* 删除按钮 */
+  .stop-del-btn {
+    display: none; background: none; border: none; cursor: pointer;
+    color: var(--muted); font-size: 15px; padding: 2px 4px; border-radius: 4px;
+    flex-shrink: 0; align-self: center; transition: color .15s;
+  }
+  .editable .stop-del-btn { display: block; }
+  .stop-del-btn:hover { color: #c0392b; }
+
+  /* 添加景点按钮 */
+  .add-stop-btn {
+    width: 100%; background: none; border: 1.5px dashed var(--card-border);
+    border-radius: var(--radius-sm); padding: 10px; font-family: 'Outfit', sans-serif;
+    font-size: 13px; color: var(--muted); cursor: pointer; transition: all .2s;
+    display: none; margin-top: 6px;
+  }
+  .edit-mode .add-stop-btn { display: block; }
+  .add-stop-btn:hover { border-color: var(--bark); color: var(--terra); }
+
+  .warn-section { margin-top: 18px; background: rgba(196,168,50,.08); border: 1px solid rgba(196,168,50,.3); border-radius: var(--radius-sm); padding: 13px 15px; animation: fadeUp .4s ease both; }
+  .warn-label { font-size: 11px; font-weight: 500; color: #806800; letter-spacing: .08em; margin-bottom: 7px; }
+  .warn-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+  .warn-list li { font-size: 12px; color: #5A4A00; display: flex; gap: 7px; }
+  .warn-list li::before { content: '!'; font-weight: 700; flex-shrink: 0; }
+
+  .streaming-indicator { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+  .streaming-dots span { display: inline-block; width: 5px; height: 5px; background: var(--bark); border-radius: 50%; animation: dot .9s ease-in-out infinite; }
+  .streaming-dots span:nth-child(2) { animation-delay: .15s; }
+  .streaming-dots span:nth-child(3) { animation-delay: .3s; }
+  @keyframes dot { 0%,60%,100%{opacity:.2} 30%{opacity:1} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  .paste-btn {
+    background: var(--note-bg); border: 1px solid var(--bark); border-radius: var(--radius-sm);
+    padding: 11px 24px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 500;
+    color: var(--terra); cursor: pointer; transition: all .2s; width: 100%;
+  }
+  .paste-btn:hover { background: rgba(196,168,130,.1); }
+  .error-box { background: rgba(192,57,43,.06); border: 1px solid rgba(192,57,43,.25); border-radius: var(--radius-sm); padding: 14px 16px; font-size: 13px; color: #8B1A0A; line-height: 1.6; }
+
+  /* toast */
+  #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--cream); padding: 10px 20px; border-radius: 20px; font-size: 13px; opacity: 0; transition: all .3s; pointer-events: none; z-index: 999; white-space: nowrap; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── 地图 ── */
+  #amap-container { width: 100%; height: 420px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--card-border); margin-bottom: 24px; }
+  /* ── 景点图片（左右各半） ── */
+  .stop-item { display: flex; gap: 0; align-items: stretch; padding: 0; overflow: hidden; }
+  .stop-thumb-wrap { flex: 0 0 50%; height: 140px; overflow: hidden; background: var(--sand); position: relative; }
+  .stop-img { width: 100%; height: 100%; object-fit: cover; display: none; transition: opacity .3s; }
+  .stop-img.loaded { display: block; }
+  .stop-thumb-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 28px; color: var(--bark); background: var(--sand); }
+  .stop-main { flex: 0 0 50%; min-width: 0; padding: 12px 14px; display: flex; flex-direction: column; justify-content: center; }
+  .stop-row { display: flex; gap: 10px; align-items: flex-start; }
+</style>
+<script src="https://webapi.amap.com/maps?v=2.0&key=AMAP_JS_KEY_PLACEHOLDER"></script>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">🏝</div>
+  <span class="logo-text">行程岛</span>
+  <span class="logo-sub">小红书笔记 → 智能行程</span>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('install')">📥 安装采集工具</div>
+  <div class="tab" onclick="switchTab('planner')">✦ 生成行程</div>
+</div>
+
+<!-- ══ INSTALL PANEL ══ -->
+<div class="panel active" id="panel-install">
+  <div class="install-panel">
+    <div class="install-hero">
+      <h1>一键采集小红书笔记</h1>
+      <p>把下方按钮拖到浏览器书签栏，之后在任何小红书笔记页面点一下<br>内容就自动发送到行程岛，无需复制粘贴</p>
+    </div>
+
+    <div class="install-steps">
+      <div class="install-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">确保书签栏可见</div>
+          <div class="step-desc">Chrome / Edge 按 <strong>Ctrl+Shift+B</strong>（Mac 用 ⌘+Shift+B）显示书签栏。Safari 在「显示」→「显示个人收藏栏」。</div>
+        </div>
+      </div>
+
+      <div class="install-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">拖拽下方按钮到书签栏</div>
+          <div class="step-desc">用鼠标按住按钮，拖动到浏览器顶部的书签栏后松开，即完成安装。</div>
+          <div class="bookmarklet-wrap">
+            <a class="bookmarklet-btn" id="bookmarkletBtn" href="#" title="拖到书签栏安装">
+              🏝 采集到行程岛
+            </a>
+            <span class="drag-hint">← 按住拖到书签栏</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="install-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">打开小红书笔记，点击书签</div>
+          <div class="step-desc">在电脑浏览器打开任意小红书笔记页面，点击书签栏里的「🏝 采集到行程岛」，笔记内容会自动发送过来，页面自动跳转到「生成行程」。</div>
+        </div>
+      </div>
+
+      <div class="install-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">收集多篇后，一键生成行程</div>
+          <div class="step-desc">重复第 3 步采集更多笔记，然后切换到「生成行程」标签，填写目的地和出行信息后点击生成。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tip-box">
+      <strong>兼容性说明：</strong>支持 Chrome、Edge、Firefox、Safari 桌面版。小红书 App 内置浏览器不支持，请用系统浏览器打开笔记链接后再点击书签。
+    </div>
+  </div>
+</div>
+
+<!-- ══ PLANNER PANEL ══ -->
+<div class="panel" id="panel-planner">
+  <div class="planner-wrap">
+    <aside class="left-panel">
+      <div class="panel-label">行程基本信息</div>
+      <div class="trip-meta">
+        <div class="meta-field" style="grid-column:1/-1">
+          <label>目的地</label>
+          <input type="text" id="dest" placeholder="例：京都、大理、成都...">
+        </div>
+        <div class="meta-field">
+          <label>天数</label>
+          <select id="days">
+            <option value="2">2 天</option>
+            <option value="3" selected>3 天</option>
+            <option value="4">4 天</option>
+            <option value="5">5 天</option>
+            <option value="7">7 天</option>
+          </select>
+        </div>
+        <div class="meta-field">
+          <label>人员</label>
+          <select id="people">
+            <option value="独自">独自</option>
+            <option value="2人" selected>2 人</option>
+            <option value="亲子">亲子</option>
+            <option value="小团">小团</option>
+          </select>
+        </div>
+        <div class="meta-field">
+          <label>风格</label>
+          <select id="style">
+            <option value="深度文化">文化</option>
+            <option value="休闲度假" selected>休闲</option>
+            <option value="美食探店">美食</option>
+            <option value="自然户外">户外</option>
+            <option value="拍照打卡">打卡</option>
+          </select>
+        </div>
+        <div class="meta-field">
+          <label>住宿</label>
+          <select id="hotel">
+            <option value="民宿">民宿</option>
+            <option value="酒店" selected>酒店</option>
+            <option value="青旅">青旅</option>
+            <option value="不限">不限</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="panel-label">目的地文件夹</div>
+      <div class="folder-bar" id="folderBar"></div>
+      <button class="folder-add-btn" onclick="addFolder()">＋ 新建文件夹</button>
+
+      <div class="notes-header">
+        <div class="panel-label">已采集笔记</div>
+        <span class="note-count" id="noteCount">0 篇</span>
+      </div>
+
+      <div id="notesList">
+        <div class="empty-notes">
+          <div class="empty-notes-icon">📋</div>
+          <div class="empty-notes-text">
+            还没有笔记<br>
+            先去<span class="empty-notes-link" onclick="switchTab('install')">安装采集工具</span>，<br>
+            在小红书页面点击书签即可采集
+          </div>
+        </div>
+      </div>
+
+      <button class="paste-btn" id="pasteBtn" onclick="pasteNote()">
+        📋 粘贴采集的笔记
+      </button>
+
+      <button class="generate-btn" id="generateBtn" onclick="generate()">
+        <div class="spinner"></div>
+        <span class="btn-text">✦ 生成旅行行程</span>
+      </button>
+    </aside>
+
+    <section class="right-panel" id="rightPanel">
+      <div class="empty-state">
+        <div class="empty-icon">🗺</div>
+        <div class="empty-text">把笔记变成行程</div>
+        <div class="empty-sub">采集几篇小红书笔记后<br>AI 帮你提炼成每日行程 + 种草清单</div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- 采集弹窗 -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">选择目的地文件夹</div>
+    <div class="modal-subtitle">将笔记归入哪个目的地？</div>
+    <div class="modal-note-preview" id="modalNotePreview"></div>
+    <div class="modal-folders" id="modalFolders"></div>
+    <input class="modal-new-input" id="modalNewInput" placeholder="或输入新文件夹名称，如：京都">
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeModal()">取消</button>
+      <button class="modal-btn primary" onclick="confirmFolder()">确认</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════
+//  Bookmarklet code (injected into href)
+// ══════════════════════════════
+(function(){
+  // Build bookmarklet href: pure ASCII only, all strings as char codes
+  // The bookmarklet will: grab title+body, store in localStorage 'xhs_note_queue', show alert
+  var fn = function(){
+    // click expand buttons
+    var all=document.querySelectorAll('*');
+    for(var i=0;i<all.length;i++){
+      var tx=(all[i].childNodes.length===1&&all[i].firstChild.nodeType===3)?(all[i].innerText||'').trim():'';
+      if(tx==='\u5c55\u5f00'||tx==='\u5168\u6587'){try{all[i].click();}catch(e){}}
+    }
+    // get title
+    var t=document.querySelector('#detail-title')||document.querySelector('h1');
+    var title=t?(t.innerText||t.textContent||'').trim():'';
+    if(!title)title=document.title.split('-')[0].trim();
+    // get body
+    var b=document.querySelector('#detail-desc');
+    if(!b)b=document.querySelector('.note-content .desc');
+    var body=b?(b.innerText||b.textContent||'').trim():'';
+    if(!body){var m=document.querySelector('meta[name="description"]');if(m)body=m.getAttribute('content')||'';}
+    body=body.slice(0,2000);
+    // get url
+    var url=location.href;
+    if(!title&&!body){alert('No content found');return;}
+    // store
+    var obj={title:title,body:body,url:url,ts:Date.now()};
+    var json=JSON.stringify(obj);
+    try{
+      var q=[];
+      try{q=JSON.parse(localStorage.getItem('xhs_note_queue')||'[]');}catch(e){}
+      q.unshift(obj);
+      localStorage.setItem('xhs_note_queue',JSON.stringify(q.slice(0,20)));
+    }catch(e){}
+    // also copy to clipboard
+    try{
+      navigator.clipboard.writeText(json).then(function(){
+        alert('\u2705 \u7b14\u8bb0\u5df2\u91c7\u96c6\uff01\n\u56de\u5230\u884c\u7a0b\u5c9b\u9875\u9762\uff0c\u70b9\u300c\u7c98\u8d34\u91c7\u96c6\u7684\u7b14\u8bb0\u300d');
+      },function(){
+        alert('\u91c7\u96c6\u5b8c\u6210\uff0c\u8bf7\u56de\u5230\u884c\u7a0b\u5c9b\u7c98\u8d34');
+      });
+    }catch(e){
+      alert('\u91c7\u96c6\u5b8c\u6210\uff0c\u8bf7\u56de\u5230\u884c\u7a0b\u5c9b\u7c98\u8d34');
+    }
+  };
+  // Serialize fn to string, encode for bookmarklet
+  var code = '(' + fn.toString() + ')()';
+  document.getElementById('bookmarkletBtn').href = 'javascript:' + encodeURIComponent(code);
+})();
+
+// ══════════════════════════════
+//  Folder + Note store
+// ══════════════════════════════
+let folders = [];     // [{id, name}]
+let notesByFolder = {}; // {folderId: [note,...]}
+let currentFolderId = null;
+let pendingNote = null; // 待归入文件夹的笔记
+
+try {
+  folders = JSON.parse(sessionStorage.getItem('xhsFolders') || '[]');
+  notesByFolder = JSON.parse(sessionStorage.getItem('xhsNotesByFolder') || '{}');
+  currentFolderId = sessionStorage.getItem('xhsCurrentFolder') || null;
+} catch(e) {}
+
+// 兼容旧数据迁移
+try {
+  const oldNotes = JSON.parse(sessionStorage.getItem('xhsNotes') || '[]');
+  if (oldNotes.length && folders.length === 0) {
+    const defId = 'folder_default';
+    folders = [{ id: defId, name: '默认' }];
+    notesByFolder[defId] = oldNotes;
+    currentFolderId = defId;
+    sessionStorage.removeItem('xhsNotes');
+    saveAll();
+  }
+} catch(e) {}
+
+// 确保有默认文件夹
+if (folders.length === 0) {
+  const defId = 'folder_' + Date.now();
+  folders = [{ id: defId, name: '我的收藏' }];
+  notesByFolder[defId] = [];
+  currentFolderId = defId;
+  saveAll();
+}
+if (!currentFolderId || !folders.find(f => f.id === currentFolderId)) {
+  currentFolderId = folders[0].id;
+}
+
+function saveAll() {
+  try {
+    sessionStorage.setItem('xhsFolders', JSON.stringify(folders));
+    sessionStorage.setItem('xhsNotesByFolder', JSON.stringify(notesByFolder));
+    sessionStorage.setItem('xhsCurrentFolder', currentFolderId);
+  } catch(e) {}
+}
+
+function getNotes() { return notesByFolder[currentFolderId] || []; }
+
+function renderFolderBar() {
+  const bar = document.getElementById('folderBar');
+  if (!bar) return;
+  bar.innerHTML = folders.map(f => {
+    const count = (notesByFolder[f.id] || []).length;
+    return `<div class="folder-tab ${f.id === currentFolderId ? 'active' : ''}"
+      onclick="switchFolder('${f.id}')">
+      📁 ${escHtml(f.name)}
+      <span class="folder-count">${count}</span>
+    </div>`;
+  }).join('');
+}
+
+function switchFolder(folderId) {
+  currentFolderId = folderId;
+  saveAll();
+  renderFolderBar();
+  renderNotesList();
+  // 自动填入目的地
+  const folder = folders.find(f => f.id === folderId);
+  if (folder && folder.name !== '我的收藏' && folder.name !== '默认') {
+    document.getElementById('dest').value = folder.name;
+  }
+}
+
+function addFolder() {
+  const name = prompt('新文件夹名称（如：京都、大理）：');
+  if (!name || !name.trim()) return;
+  const id = 'folder_' + Date.now();
+  folders.push({ id, name: name.trim() });
+  notesByFolder[id] = [];
+  currentFolderId = id;
+  saveAll();
+  renderFolderBar();
+  renderNotesList();
+  document.getElementById('dest').value = name.trim();
+}
+
+function renderNotesList() {
+  const el = document.getElementById('notesList');
+  const count = document.getElementById('noteCount');
+  const curNotes = notesByFolder[currentFolderId] || [];
+  count.textContent = curNotes.length + ' 篇';
+  if (curNotes.length === 0) {
+    el.innerHTML = `<div class="empty-notes">
+      <div class="empty-notes-icon">📋</div>
+      <div class="empty-notes-text">还没有笔记<br>
+      先去<span class="empty-notes-link" onclick="switchTab('install')">安装采集工具</span>，<br>
+      在小红书页面点击书签即可采集</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = `<div class="notes-list">${curNotes.map((n, i) => `
+    <div class="note-card" style="animation-delay:${i*0.05}s">
+      <div class="note-card-icon">📄</div>
+      <div class="note-card-body">
+        <div class="note-card-title">${escHtml(n.title || '无标题笔记')}</div>
+        <div class="note-card-preview">${escHtml((n.body || '').slice(0, 60))}…</div>
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        <button class="note-card-del" onclick="moveNote(${i})" title="移动到其他文件夹" style="font-size:12px;padding:2px 6px">移动</button>
+        <button class="note-card-del" onclick="removeNote(${i})" title="删除">×</button>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function removeNote(i) {
+  const curNotes = notesByFolder[currentFolderId] || [];
+  curNotes.splice(i, 1);
+  notesByFolder[currentFolderId] = curNotes;
+  saveAll();
+  renderFolderBar();
+  renderNotesList();
+}
+
+function moveNote(i) {
+  const curNotes = notesByFolder[currentFolderId] || [];
+  const note = curNotes[i];
+  if (!note) return;
+
+  // 过滤掉当前文件夹，只显示其他文件夹
+  const otherFolders = folders.filter(f => f.id !== currentFolderId);
+  if (otherFolders.length === 0) {
+    showToast('请先新建其他文件夹');
+    return;
+  }
+
+  // 复用弹窗，但只显示其他文件夹
+  pendingNote = note;
+  pendingMoveFromIndex = i;
+  document.getElementById('modalNotePreview').textContent =
+    (note.title || '无标题') + '：' + (note.body || '').slice(0, 50) + '…';
+
+  // 只渲染其他文件夹
+  const el = document.getElementById('modalFolders');
+  el.innerHTML = otherFolders.map(f => `
+    <button class="modal-folder-btn" onclick="selectModalFolder('${f.id}')">
+      📁 ${escHtml(f.name)}
+      <span class="modal-folder-count">${(notesByFolder[f.id]||[]).length} 篇</span>
+    </button>`).join('');
+
+  document.getElementById('modalOverlay').dataset.moveMode = '1';
+  document.getElementById('modalOverlay').classList.add('show');
+}
+let pendingMoveFromIndex = -1;
+
+// ── 弹窗逻辑 ──
+function showFolderModal(note) {
+  pendingNote = note;
+  document.getElementById('modalNotePreview').textContent =
+    (note.title || '无标题') + '：' + (note.body || '').slice(0, 50) + '…';
+  renderModalFolders();
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function renderModalFolders() {
+  const el = document.getElementById('modalFolders');
+  el.innerHTML = folders.map(f => `
+    <button class="modal-folder-btn" onclick="selectModalFolder('${f.id}')">
+      📁 ${escHtml(f.name)}
+      <span class="modal-folder-count">${(notesByFolder[f.id]||[]).length} 篇</span>
+    </button>`).join('');
+}
+
+function selectModalFolder(folderId) {
+  document.querySelectorAll('.modal-folder-btn').forEach(b => b.style.background = '');
+  event.currentTarget.style.background = 'rgba(196,168,130,.15)';
+  document.getElementById('modalNewInput').value = '';
+  document.getElementById('modalOverlay').dataset.selectedFolder = folderId;
+}
+
+function confirmFolder() {
+  const newName = document.getElementById('modalNewInput').value.trim();
+  let folderId = document.getElementById('modalOverlay').dataset.selectedFolder;
+  const isMoveMode = document.getElementById('modalOverlay').dataset.moveMode === '1';
+
+  if (newName) {
+    folderId = 'folder_' + Date.now();
+    folders.push({ id: folderId, name: newName });
+    notesByFolder[folderId] = [];
+  }
+
+  if (!folderId && folders.length > 0) folderId = isMoveMode
+    ? folders.filter(f => f.id !== currentFolderId)[0]?.id
+    : folders[0].id;
+  if (!folderId) { closeModal(); return; }
+
+  if (isMoveMode) {
+    // 移动模式：从当前文件夹删除，加入目标文件夹
+    const curNotes = notesByFolder[currentFolderId] || [];
+    const [note] = curNotes.splice(pendingMoveFromIndex, 1);
+    notesByFolder[currentFolderId] = curNotes;
+    if (note) {
+      if (!notesByFolder[folderId]) notesByFolder[folderId] = [];
+      const exists = notesByFolder[folderId].some(n => n.url === note.url);
+      if (!exists) notesByFolder[folderId].unshift(note);
+    }
+    saveAll();
+    renderFolderBar();
+    renderNotesList();
+    const folder = folders.find(f => f.id === folderId);
+    closeModal();
+    showToast('✓ 已移动到：' + (folder?.name || ''));
+  } else {
+    // 采集模式：添加到目标文件夹
+    const exists = (notesByFolder[folderId] || []).some(n => n.url === pendingNote.url);
+    if (!exists) {
+      if (!notesByFolder[folderId]) notesByFolder[folderId] = [];
+      notesByFolder[folderId].unshift(pendingNote);
+    }
+    currentFolderId = folderId;
+    saveAll();
+    renderFolderBar();
+    renderNotesList();
+    const folder = folders.find(f => f.id === folderId);
+    if (folder && folder.name !== '我的收藏' && folder.name !== '默认') {
+      document.getElementById('dest').value = folder.name;
+    }
+    closeModal();
+    showToast(exists ? '该笔记已存在' : '✓ 笔记已添加到：' + (folder?.name || ''));
+  }
+}
+
+function closeModal() {
+  const overlay = document.getElementById('modalOverlay');
+  overlay.classList.remove('show');
+  overlay.dataset.selectedFolder = '';
+  overlay.dataset.moveMode = '';
+  document.getElementById('modalNewInput').value = '';
+  pendingNote = null;
+  pendingMoveFromIndex = -1;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════
+//  Receive note from bookmarklet (via URL param)
+// ══════════════════════════════
+(function receiveFromBookmarklet() {
+  const params = new URLSearchParams(location.search);
+  const noteParam = params.get('note');
+  if (!noteParam) return;
+  try {
+    const note = JSON.parse(decodeURIComponent(noteParam));
+    if (note && (note.title || note.body)) {
+      // 弹出文件夹选择弹窗
+      setTimeout(() => showFolderModal(note), 300);
+    }
+  } catch(e) {}
+  history.replaceState({}, '', location.pathname + (location.hash || ''));
+})();
+
+// check hash to auto-switch tab
+if (location.hash === '#planner') switchTab('planner');
+
+renderFolderBar();
+renderNotesList();
+
+// ══════════════════════════════
+//  Tab switching
+// ══════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && name === 'install') || (i === 1 && name === 'planner'));
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+// ══════════════════════════════
+//  AI generation
+// ══════════════════════════════
+async function generate() {
+  const dest   = document.getElementById('dest').value.trim();
+  const days   = document.getElementById('days').value;
+  const people = document.getElementById('people').value;
+  const style  = document.getElementById('style').value;
+  const hotel  = document.getElementById('hotel').value;
+
+  if (!dest) { showToast('请填写目的地 🗺'); return; }
+  const notes = getNotes();
+  if (notes.length === 0) { showToast('请先采集至少一篇笔记 📋'); return; }
+
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true; btn.classList.add('loading');
+  btn.querySelector('.btn-text').textContent = 'AI 规划中...';
+
+  const panel = document.getElementById('rightPanel');
+  panel.innerHTML = `<div class="streaming-indicator"><div class="streaming-dots"><span></span><span></span><span></span></div>正在分析 ${notes.length} 篇笔记，提炼行程中...</div>`;
+
+  const noteTexts = notes.map((n, i) =>
+    `【笔记${i+1}】${n.title ? '标题：' + n.title + '\n' : ''}${n.body || ''}`
+  ).join('\n\n');
+
+  const prompt = `你是专业旅行规划师。用户提供了 ${notes.length} 篇关于「${dest}」的小红书旅行笔记，请规划 ${days} 天行程。
+
+用户信息：目的地 ${dest}，${days} 天，${people}，${style}风格，${hotel}住宿
+
+笔记内容：
+${noteTexts}
+
+请严格返回 JSON（不要有任何多余文字）：
+{"tripTitle":"主题标题（10字内）","summary":"一句话概述（20字内）","days":${days},"people":"${people}","style":"${style}","inspirations":[{"type":"food|view|stay|tip","name":"名称","desc":"描述（30字内）"}],"itinerary":[{"day":1,"theme":"当天主题（10字内）","stops":[{"time":"09:00","name":"地点","nameEn":"Place Name in English","desc":"描述（30字内）","tags":["标签"],"lat":39.9042,"lng":116.4074}]}],"warnings":["注意事项"]}
+
+要求：inspirations 4-6个，每天3-5个停留点，warnings 0-3条踩坑提醒，每个stop必须包含准确的lat/lng经纬度坐标（小数点后4位），nameEn为景点的标准英文名称`;
+
+  try {
+    const res = await fetch(API_BASE + '/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 2000
+      })
+    });
+    const data = await res.json();
+    const raw = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    const result = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    renderResult(result);
+  } catch(err) {
+    panel.innerHTML = `<div class="error-box">⚠ ${err.message || '生成失败，请重试'}</div>`;
+  } finally {
+    btn.disabled = false; btn.classList.remove('loading');
+    btn.querySelector('.btn-text').textContent = '✦ 重新生成';
+  }
+}
+
+function renderResult(r) {
+  const typeLabel = { food:'美食', view:'风景', stay:'住宿', tip:'贴士' };
+  const panel = document.getElementById('rightPanel');
+  let html = `<div class="result-header">
+    <div><div class="result-title">${r.tripTitle || '行程规划'}</div>
+    <div style="font-size:13px;color:var(--muted);margin-top:4px">${r.summary||''}</div></div>
+    <div class="result-meta">${r.days}天 · ${r.people}<br>${r.style}</div>
+  </div>
+  <div class="edit-toolbar">
+    <button class="edit-btn" id="editToggleBtn" onclick="toggleEditMode()">✏️ 编辑行程</button>
+    <button class="edit-btn" onclick="document.getElementById('generateBtn').click()">🔄 重新生成</button>
+    <span class="edit-hint" id="editHint" style="display:none">拖拽调整顺序 · 点击文字修改 · 点 × 删除景点</span>
+  </div>`;
+
+  // 等容器渲染完再初始化地图
+  const dest = document.getElementById('dest').value.trim();
+  setTimeout(() => {
+    initMap(dest);
+    // 再等地图底图加载完再打点
+    setTimeout(() => {
+      addMarkers(r.itinerary || []);
+    }, 1500);
+  }, 300);
+
+  if (r.inspirations?.length) {
+    html += `<div class="inspo-section"><div class="section-label">✦ 笔记亮点</div><div class="inspo-grid">`;
+    r.inspirations.forEach((c,i) => {
+      const t = c.type||'view';
+      html += `<div class="inspo-card type-${t}" style="animation-delay:${i*.06}s">
+        <span class="inspo-tag">${typeLabel[t]||t}</span>
+        <div class="inspo-name">${c.name}</div>
+        <div class="inspo-desc">${c.desc}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  html += `<div><div class="section-label">📅 每日行程</div>`;
+  (r.itinerary||[]).forEach((day,di) => {
+    html += `<div class="day-block" id="day-${day.day}" style="animation-delay:${.15+di*.08}s">
+      <div class="day-header"><span class="day-badge" data-day="${day.day}">DAY ${day.day}</span><span class="day-theme">${day.theme||''}</span></div>
+      <div class="day-stops">`;
+    (day.stops||[]).forEach(s => {
+      const tags = (s.tags||[]).map(t=>`<span class="stop-tag">${t}</span>`).join('');
+      const imgId = 'img-' + Math.random().toString(36).slice(2,8);
+      const stopId = 'stop-' + Math.random().toString(36).slice(2,8);
+      html += `<div class="stop-item" id="${stopId}" draggable="false"
+        data-lat="${s.lat||''}" data-lng="${s.lng||''}" data-name-en="${s.nameEn||''}"
+        ondragstart="onDragStart(event)" ondragover="onDragOver(event)"
+        ondrop="onDrop(event)" ondragleave="onDragLeave(event)" ondragend="onDragEnd(event)">
+        <div class="stop-thumb-wrap">
+          <img id="${imgId}" class="stop-img" alt="${s.name}">
+          <div class="stop-thumb-placeholder" id="ph-${imgId}">📍</div>
+        </div>
+        <div class="stop-main">
+          <div class="stop-row" style="align-items:center">
+            <span class="drag-handle" title="拖拽排序">⠿</span>
+            <span class="stop-time editable-field" contenteditable="false">${s.time}</span>
+            <div class="stop-dot" style="margin-top:0;flex-shrink:0"></div>
+            <div class="stop-content" style="flex:1">
+              <div class="stop-name editable-field" contenteditable="false">${s.name}</div>
+              <div class="stop-desc editable-field" contenteditable="false">${s.desc}</div>
+              ${tags?`<div class="stop-tags">${tags}</div>`:''}
+            </div>
+            <button class="stop-del-btn" onclick="deleteStop('${stopId}')" title="删除">×</button>
+          </div>
+        </div>
+      </div>`;
+    });
+    const dayId = 'day-' + day.day;
+    html += `</div>
+      <button class="add-stop-btn" onclick="addStop('${dayId}')">＋ 添加景点</button>
+    </div>`;
+  });
+  html += `</div>`;
+
+  if (r.warnings?.length) {
+    html += `<div class="warn-section"><div class="warn-label">⚠ 避雷提醒</div><ul class="warn-list">
+      ${r.warnings.map(w=>`<li>${w}</li>`).join('')}</ul></div>`;
+  }
+  // 地图容器插在行程列表上方
+  html = `<div id="amap-container"></div>` + html;
+  panel.innerHTML = html;
+
+  // 并行加载所有景点图片
+  const dest2 = document.getElementById('dest').value.trim();
+  const imgItems = [];
+  document.querySelectorAll('.stop-item').forEach(item => {
+    const nameEl = item.querySelector('.stop-name');
+    const imgEl  = item.querySelector('.stop-img');
+    if (nameEl && imgEl) imgItems.push({ nameEl, imgEl });
+  });
+  if (imgItems.length) loadAllImages(imgItems, dest2);
+}
+
+// ══════════════════════════════
+//  Paste note from clipboard
+// ══════════════════════════════
+async function pasteNote() {
+  let text = '';
+  try {
+    text = await navigator.clipboard.readText();
+  } catch(e) {
+    text = prompt('请粘贴书签采集的内容（Ctrl+V）：') || '';
+  }
+  if (!text) return;
+  try {
+    const note = JSON.parse(text.trim());
+    if (!note.title && !note.body) throw new Error();
+    showFolderModal(note);
+    switchTab('planner');
+  } catch(e) {
+    showToast('⚠ 内容格式不对，请重新采集');
+  }
+}
+
+// ══════════════════════════════
+//  Edit Mode
+// ══════════════════════════════
+let editMode = false;
+let dragSrc = null;
+
+function toggleEditMode() {
+  editMode = !editMode;
+  const panel = document.getElementById('rightPanel');
+  const btn   = document.getElementById('editToggleBtn');
+  const hint  = document.getElementById('editHint');
+
+  if (editMode) {
+    panel.classList.add('edit-mode');
+    btn.classList.add('active');
+    btn.textContent = '✓ 完成编辑';
+    hint.style.display = 'inline';
+    // 开启可编辑和拖拽
+    panel.querySelectorAll('.stop-item').forEach(el => {
+      el.classList.add('editable');
+      el.setAttribute('draggable', 'true');
+    });
+    panel.querySelectorAll('.editable-field').forEach(el => {
+      el.setAttribute('contenteditable', 'true');
+    });
+  } else {
+    panel.classList.remove('edit-mode');
+    btn.classList.remove('active');
+    btn.textContent = '✏️ 编辑行程';
+    hint.style.display = 'none';
+    panel.querySelectorAll('.stop-item').forEach(el => {
+      el.classList.remove('editable');
+      el.setAttribute('draggable', 'false');
+    });
+    panel.querySelectorAll('.editable-field').forEach(el => {
+      el.setAttribute('contenteditable', 'false');
+      el.blur();
+    });
+    // 完成编辑后同步地图
+    syncMapFromDOM();
+  }
+}
+
+// ── 从当前 DOM 读取景点数据，重新打点 ──
+function syncMapFromDOM() {
+  // 销毁旧实例，重新创建
+  if (amapInstance) { amapInstance.destroy(); amapInstance = null; }
+  mapOverlays = [];
+
+  const dest = document.getElementById('dest').value.trim();
+  amapInstance = new AMap.Map('amap-container', { zoom: 12, resizeEnable: true });
+
+  // 定位到目的地
+  if (dest) {
+    fetch(`${API_BASE}/api/geocode?address=${encodeURIComponent(dest)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.location && amapInstance)
+          amapInstance.setCenter([data.location.lng, data.location.lat]);
+      }).catch(() => {});
+  }
+
+  const DAY_COLORS = ['#C17B4A', '#5A7A5C', '#7A7ABE', '#C4A832', '#D85A30', '#378ADD', '#9B59B6'];
+  const allBounds = [];
+
+  // 等地图初始化完成再打点
+  setTimeout(() => {
+    document.querySelectorAll('.day-block').forEach((dayEl, di) => {
+      const color = DAY_COLORS[di % DAY_COLORS.length];
+      const stops = [...dayEl.querySelectorAll('.stop-item')];
+      const dayPositions = [];
+
+      stops.forEach((stopEl, si) => {
+        const lat = parseFloat(stopEl.dataset.lat);
+        const lng = parseFloat(stopEl.dataset.lng);
+        const name = stopEl.querySelector('.stop-name')?.textContent?.trim() || '';
+        if (!lat || !lng || isNaN(lat) || isNaN(lng)) return;
+
+        const [gcjLng, gcjLat] = wgs84ToGcj02(lng, lat);
+        const pos = new AMap.LngLat(gcjLng, gcjLat);
+        dayPositions.push(pos);
+        allBounds.push(pos);
+
+        const marker = new AMap.Marker({
+          position: pos,
+          content: `<div style="width:28px;height:28px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.25)">${si + 1}</div>`,
+          offset: new AMap.Pixel(-14, -14),
+          title: name,
+          label: {
+            content: `<div style="background:#1E1A14;color:#fff;padding:3px 8px;border-radius:4px;font-size:11px;white-space:nowrap">${name}</div>`,
+            direction: 'top', offset: new AMap.Pixel(0, -4)
+          }
+        });
+        amapInstance.add(marker);
+        mapOverlays.push(marker);
+      });
+
+      if (dayPositions.length > 1) {
+        const polyline = new AMap.Polyline({
+          path: dayPositions, strokeColor: color,
+          strokeWeight: 2.5, strokeOpacity: 0.7,
+          strokeStyle: 'dashed', lineJoin: 'round', lineCap: 'round',
+        });
+        amapInstance.add(polyline);
+        mapOverlays.push(polyline);
+      }
+    });
+
+    if (allBounds.length > 1) {
+      amapInstance.setBounds(new AMap.Bounds(
+        [Math.min(...allBounds.map(b=>b.lng))-0.01, Math.min(...allBounds.map(b=>b.lat))-0.01],
+        [Math.max(...allBounds.map(b=>b.lng))+0.01, Math.max(...allBounds.map(b=>b.lat))+0.01]
+      ));
+    }
+  }, 800);
+}
+
+function _doSyncMap() {
+  const DAY_COLORS = ['#C17B4A', '#5A7A5C', '#7A7ABE', '#C4A832', '#D85A30', '#378ADD', '#9B59B6'];
+  const allBounds = [];
+
+  document.querySelectorAll('.day-block').forEach((dayEl, di) => {
+    const color = DAY_COLORS[di % DAY_COLORS.length];
+    const stops = [...dayEl.querySelectorAll('.stop-item')];
+    const dayPositions = [];
+
+    stops.forEach((stopEl, si) => {
+      // 尝试从 data 属性读坐标（原始生成时存入）
+      const lat = parseFloat(stopEl.dataset.lat);
+      const lng = parseFloat(stopEl.dataset.lng);
+      const name = stopEl.querySelector('.stop-name')?.textContent?.trim() || '';
+      if (!lat || !lng) return;
+
+      const [gcjLng, gcjLat] = wgs84ToGcj02(lng, lat);
+      const pos = new AMap.LngLat(gcjLng, gcjLat);
+      dayPositions.push(pos);
+      allBounds.push(pos);
+
+      amapInstance.add(new AMap.Marker({
+        position: pos,
+        content: `<div style="width:28px;height:28px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.25)">${si + 1}</div>`,
+        offset: new AMap.Pixel(-14, -14),
+        title: name,
+        label: {
+          content: `<div style="background:#1E1A14;color:#fff;padding:3px 8px;border-radius:4px;font-size:11px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.2)">${name}</div>`,
+          direction: 'top', offset: new AMap.Pixel(0, -4)
+        }
+      }));
+    });
+
+    if (dayPositions.length > 1) {
+      amapInstance.add(new AMap.Polyline({
+        path: dayPositions,
+        strokeColor: color, strokeWeight: 2.5,
+        strokeOpacity: 0.7, strokeStyle: 'dashed',
+        lineJoin: 'round', lineCap: 'round',
+      }));
+    }
+  });
+
+  if (allBounds.length > 1) {
+    amapInstance.setBounds(new AMap.Bounds(
+      [Math.min(...allBounds.map(b=>b.lng))-0.01, Math.min(...allBounds.map(b=>b.lat))-0.01],
+      [Math.max(...allBounds.map(b=>b.lng))+0.01, Math.max(...allBounds.map(b=>b.lat))+0.01]
+    ));
+  }
+}
+
+// ── 拖拽排序 ──
+function onDragStart(e) {
+  if (!editMode) return;
+  dragSrc = e.currentTarget;
+  dragSrc.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onDragOver(e) {
+  if (!editMode || !dragSrc) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const target = e.currentTarget;
+  if (target !== dragSrc) target.classList.add('drag-over');
+}
+function onDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+function onDrop(e) {
+  if (!editMode || !dragSrc) return;
+  e.preventDefault();
+  const target = e.currentTarget;
+  target.classList.remove('drag-over');
+  if (target === dragSrc) return;
+  // 在同一 day-stops 容器内交换位置
+  const srcParent = dragSrc.parentNode;
+  const tgtParent = target.parentNode;
+  if (srcParent === tgtParent) {
+    const stops = [...srcParent.children].filter(c => c.classList.contains('stop-item'));
+    const srcIdx = stops.indexOf(dragSrc);
+    const tgtIdx = stops.indexOf(target);
+    if (srcIdx < tgtIdx) srcParent.insertBefore(dragSrc, target.nextSibling);
+    else srcParent.insertBefore(dragSrc, target);
+  }
+}
+function onDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+  dragSrc = null;
+}
+
+// ── 删除景点 ──
+function deleteStop(stopId) {
+  const el = document.getElementById(stopId);
+  if (el) { el.style.transition = 'opacity .2s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 200); }
+}
+
+// ── 添加景点 ──
+function addStop(dayId) {
+  const dayBlock = document.getElementById(dayId);
+  if (!dayBlock) return;
+  const stopsContainer = dayBlock.querySelector('.day-stops');
+  const stopId = 'stop-' + Math.random().toString(36).slice(2,8);
+  const imgId  = 'img-'  + Math.random().toString(36).slice(2,8);
+  const div = document.createElement('div');
+  div.className = 'stop-item editable';
+  div.id = stopId;
+  div.setAttribute('draggable', 'true');
+  div.addEventListener('dragstart', onDragStart);
+  div.addEventListener('dragover',  onDragOver);
+  div.addEventListener('drop',      onDrop);
+  div.addEventListener('dragleave', onDragLeave);
+  div.addEventListener('dragend',   onDragEnd);
+  div.innerHTML = `
+    <div class="stop-thumb-wrap">
+      <img id="${imgId}" class="stop-img" alt="">
+      <div class="stop-thumb-placeholder" id="ph-${imgId}">📍</div>
+    </div>
+    <div class="stop-main">
+      <div class="stop-row" style="align-items:center">
+        <span class="drag-handle">⠿</span>
+        <span class="stop-time editable-field" contenteditable="true">00:00</span>
+        <div class="stop-dot" style="margin-top:0;flex-shrink:0"></div>
+        <div class="stop-content" style="flex:1">
+          <div class="stop-name editable-field" contenteditable="true">新景点名称</div>
+          <div class="stop-desc editable-field" contenteditable="true">景点描述</div>
+        </div>
+        <button class="stop-del-btn" onclick="deleteStop('${stopId}')">×</button>
+      </div>
+    </div>`;
+  stopsContainer.appendChild(div);
+  // 聚焦到名称字段
+  setTimeout(() => div.querySelector('.stop-name').focus(), 50);
+
+  // 名字编辑完后自动查坐标
+  const nameField = div.querySelector('.stop-name');
+  nameField.addEventListener('blur', async () => {
+    const name = nameField.textContent.trim();
+    if (!name || name === '新景点名称') return;
+    const city = document.getElementById('dest').value.trim();
+    try {
+      const res = await fetch(`${API_BASE}/api/geocode?address=${encodeURIComponent(name)}&city=${encodeURIComponent(city)}`);
+      const data = await res.json();
+      if (data.location) {
+        div.dataset.lat = data.location.lat;
+        div.dataset.lng = data.location.lng;
+        showToast('✓ 已定位：' + name);
+      } else {
+        showToast('⚠ 未找到坐标：' + name);
+      }
+    } catch(e) {}
+  });
+}
+
+// ══════════════════════════════
+//  Toast
+// ══════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+
+<script>
+// API 地址：本地开发用 127.0.0.1，部署后自动切换
+const API_BASE = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
+  ? '${API_BASE}'
+  : 'https://your-backend.railway.app';  // 部署后替换为实际地址
+
+// ── 地图实例 ──────────────────────────
+let amapInstance = null;
+let mapOverlays = []; // 追踪所有地图覆盖物
+
+function initMap(city) {
+  const container = document.getElementById('amap-container');
+  if (!container) return;
+  if (amapInstance) { amapInstance.destroy(); amapInstance = null; }
+  try {
+    amapInstance = new AMap.Map('amap-container', {
+      zoom: 12,
+      resizeEnable: true,
+      WebGLParams: { preserveDrawingBuffer: true }
+    });
+    // 用后端 geocode 接口定位到目的地城市
+    if (city) {
+      fetch(`${API_BASE}/api/geocode?address=${encodeURIComponent(city)}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.location && amapInstance) {
+            amapInstance.setCenter([data.location.lng, data.location.lat]);
+            amapInstance.setZoom(12);
+          }
+        })
+        .catch(() => {});
+    }
+  } catch(e) {
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:13px">地图加载失败，请检查高德 JS Key</div>';
+  }
+}
+
+// WGS-84 → GCJ-02 坐标转换（中国大陆内有效，境外原样返回）
+function wgs84ToGcj02(lng, lat) {
+  const PI = Math.PI;
+  const a = 6378245.0, ee = 0.00669342162296594323;
+  function outOfChina(lng, lat) {
+    return lng < 72.004 || lng > 137.8347 || lat < 0.8293 || lat > 55.8271;
+  }
+  function transformLat(x, y) {
+    let ret = -100 + 2*x + 3*y + 0.2*y*y + 0.1*x*y + 0.2*Math.sqrt(Math.abs(x));
+    ret += (20*Math.sin(6*x*PI) + 20*Math.sin(2*x*PI)) * 2/3;
+    ret += (20*Math.sin(y*PI) + 40*Math.sin(y/3*PI)) * 2/3;
+    ret += (160*Math.sin(y/12*PI) + 320*Math.sin(y*PI/30)) * 2/3;
+    return ret;
+  }
+  function transformLng(x, y) {
+    let ret = 300 + x + 2*y + 0.1*x*x + 0.1*x*y + 0.1*Math.sqrt(Math.abs(x));
+    ret += (20*Math.sin(6*x*PI) + 20*Math.sin(2*x*PI)) * 2/3;
+    ret += (20*Math.sin(x*PI) + 40*Math.sin(x/3*PI)) * 2/3;
+    ret += (150*Math.sin(x/12*PI) + 300*Math.sin(x/30*PI)) * 2/3;
+    return ret;
+  }
+  if (outOfChina(lng, lat)) return [lng, lat];
+  let dLat = transformLat(lng - 105.0, lat - 35.0);
+  let dLng = transformLng(lng - 105.0, lat - 35.0);
+  const radLat = lat / 180.0 * PI;
+  let magic = Math.sin(radLat);
+  magic = 1 - ee * magic * magic;
+  const sqrtMagic = Math.sqrt(magic);
+  dLat = (dLat * 180.0) / ((a * (1 - ee)) / (magic * sqrtMagic) * PI);
+  dLng = (dLng * 180.0) / (a / sqrtMagic * Math.cos(radLat) * PI);
+  return [lng + dLng, lat + dLat];
+}
+
+function addMarkers(itinerary) {
+  if (!amapInstance) return;
+  const DAY_COLORS = ['#C17B4A', '#5A7A5C', '#7A7ABE', '#C4A832', '#D85A30', '#378ADD', '#9B59B6'];
+  const allBounds = [];
+
+  itinerary.forEach((day, di) => {
+    const color = DAY_COLORS[di % DAY_COLORS.length];
+    const stops = (day.stops || []).filter(s => s.lat && s.lng);
+    if (!stops.length) return;
+
+    const dayPositions = [];
+
+    stops.forEach((s, si) => {
+      // WGS-84 → GCJ-02 纯数学转换（修正高德偏移，境外坐标不转换）
+      const [gcjLng, gcjLat] = wgs84ToGcj02(s.lng, s.lat);
+      const pos = new AMap.LngLat(gcjLng, gcjLat);
+      dayPositions.push(pos);
+      allBounds.push(pos);
+
+      // 自定义圆形标记，带序号
+      const marker = new AMap.Marker({
+        position: pos,
+        content: `<div style="
+          width:28px;height:28px;border-radius:50%;
+          background:${color};color:#fff;
+          display:flex;align-items:center;justify-content:center;
+          font-size:12px;font-weight:600;
+          border:2px solid #fff;
+          box-shadow:0 2px 6px rgba(0,0,0,0.25);
+          cursor:pointer;
+        ">${si + 1}</div>`,
+        offset: new AMap.Pixel(-14, -14),
+        title: s.name,
+        label: {
+          content: `<div style="background:#1E1A14;color:#fff;padding:3px 8px;border-radius:4px;font-size:11px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.2)">${s.name}</div>`,
+          direction: 'top',
+          offset: new AMap.Pixel(0, -4)
+        }
+      });
+      amapInstance.add(marker);
+    });
+
+    // 当天行程连线
+    if (dayPositions.length > 1) {
+      const polyline = new AMap.Polyline({
+        path: dayPositions,
+        strokeColor: color,
+        strokeWeight: 2.5,
+        strokeOpacity: 0.7,
+        strokeStyle: 'dashed',
+        lineJoin: 'round',
+        lineCap: 'round',
+      });
+      amapInstance.add(polyline);
+      mapOverlays.push(polyline);
+    }
+  });
+
+  // 自适应显示所有点
+  if (allBounds.length > 1) {
+    amapInstance.setBounds(new AMap.Bounds(
+      [Math.min(...allBounds.map(b => b.lng)) - 0.01, Math.min(...allBounds.map(b => b.lat)) - 0.01],
+      [Math.max(...allBounds.map(b => b.lng)) + 0.01, Math.max(...allBounds.map(b => b.lat)) + 0.01]
+    ));
+  } else if (allBounds.length === 1) {
+    amapInstance.setCenter(allBounds[0]);
+    amapInstance.setZoom(14);
+  }
+}
+
+// ── 图片加载（批量单次请求）──────────
+// 城市中英文映射表（前端直接处理，无需网络请求）
+const CITY_EN = {
+  '北京':'Beijing','上海':'Shanghai','广州':'Guangzhou','深圳':'Shenzhen',
+  '成都':'Chengdu','西安':'Xian','杭州':'Hangzhou','南京':'Nanjing',
+  '重庆':'Chongqing','武汉':'Wuhan','苏州':'Suzhou','厦门':'Xiamen',
+  '青岛':'Qingdao','大理':'Dali','丽江':'Lijiang','三亚':'Sanya',
+  '桂林':'Guilin','黄山':'Huangshan','张家界':'Zhangjiajie','九寨沟':'Jiuzhaigou',
+  '拉萨':'Lhasa','敦煌':'Dunhuang','哈尔滨':'Harbin',
+  '香港':'Hong Kong','澳门':'Macau','台北':'Taipei','台湾':'Taiwan',
+  '东京':'Tokyo','京都':'Kyoto','大阪':'Osaka','首尔':'Seoul',
+  '曼谷':'Bangkok','新加坡':'Singapore','巴黎':'Paris','伦敦':'London',
+  '纽约':'New York','洛杉矶':'Los Angeles','悉尼':'Sydney','墨尔本':'Melbourne',
+  '英国':'London','日本':'Tokyo','法国':'Paris','泰国':'Bangkok',
+};
+
+function getCityEn(city) {
+  for (const [zh, en] of Object.entries(CITY_EN)) {
+    if (city.includes(zh)) return en;
+  }
+  return city; // 已是英文或未知城市
+}
+
+async function loadAllImages(items, city) {
+  if (!items.length) return;
+  const cityEn = getCityEn(city);
+
+  const queries = items.map(({ nameEl, imgEl }) => {
+    const nameEn = imgEl.closest('.stop-item')?.dataset.nameEn || '';
+    const searchName = nameEn || nameEl.textContent.trim();
+    return searchName + ' ' + cityEn;
+  });
+  console.log('Image queries:', queries);
+  try {
+    const res = await fetch(API_BASE + '/api/images/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ queries })
+    });
+    const data = await res.json();
+    items.forEach(({ nameEl, imgEl }, i) => {
+      const key = queries[i];
+      const url = data.results?.[key];
+      if (url) {
+        imgEl.onload = () => {
+          imgEl.classList.add('loaded');
+          const ph = document.getElementById('ph-' + imgEl.id);
+          if (ph) ph.style.display = 'none';
+        };
+        imgEl.src = url;
+      }
+    });
+  } catch(e) {}
+}
+</script>
+
+</body>
+</html>
