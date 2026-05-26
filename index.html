@@ -1259,6 +1259,21 @@ function addStop(dayId) {
         showToast('⚠ 未找到坐标：' + name);
       }
     } catch(e) {}
+
+    // 同时加载图片
+    try {
+      const cityEn = getCityEn(city);
+      const imgRes = await fetch(`${API_BASE}/api/image?query=${encodeURIComponent(name + ' ' + cityEn)}`);
+      const imgData = await imgRes.json();
+      if (imgData.url) {
+        const imgEl = div.querySelector('.stop-img');
+        const phEl  = div.querySelector('[id^="ph-"]');
+        if (imgEl) {
+          imgEl.onload = () => { imgEl.classList.add('loaded'); if (phEl) phEl.style.display = 'none'; };
+          imgEl.src = imgData.url;
+        }
+      }
+    } catch(e) {}
   });
 }
 
